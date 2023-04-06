@@ -1,3 +1,4 @@
+[![Rust](https://github.com/SajeevanJSPY/lsert/actions/workflows/rust.yml/badge.svg)](https://github.com/SajeevanJSPY/lsert/actions/workflows/rust.yml)
 # LSERT (Local Search Engine RusT)
 
 ** This is an experimental Technology **
