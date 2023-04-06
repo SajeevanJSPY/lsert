@@ -1,0 +1,70 @@
+<html>
+    <head>
+        <title>Rustacean</title>
+    </head>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            width: 100vw;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            backgroud-color: black;
+            padding: 15px;
+        } 
+    </style>
+    <body>
+           
+        <div>
+            <h1>Query</h1>
+            <input id="search" type="search" />
+            <button id="button">Find</button>
+        </div>
+        <div>
+            <ul id="list"></ul>
+        </div>
+
+        <script>
+            let list_element = document.getElementById("list")
+            function create_element(data, count) {
+                let li = document.createElement("li")
+                li.innerHTML = data + ": " + count
+                list_element.appendChild(li)
+            }
+
+            // TODO: Handling User Input Errors
+            let search_element = document.getElementById("search")
+            let button = document.getElementById("button")
+                
+            button.addEventListener("click", e => {
+                let value = search_element.value;
+
+                fetch("/api/search", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/plain",
+                    },
+                    body: JSON.stringify(value)
+                            })
+                    .then((response) => {
+                        return response.json()
+                    })
+                    .then((data) => {
+                        list_element.innerHTML = ""
+                        data.forEach(([path, count]) => {
+                            create_element(path, count)
+                        })
+                    });
+
+            })
+
+        </script>
+    </body>
+</html>
