@@ -9,18 +9,17 @@ use std::path::PathBuf;
 type TermFreq = HashMap<String, usize>;
 type TermFreqIndex = HashMap<PathBuf, TermFreq>;
 
-// I/O Control
 pub struct IOControl;
 
 impl IOControl {
-    pub fn new(path: PathBuf, json_path: &str) -> IOResult<()> {
+    pub fn new(path: PathBuf, json_path: &str, deep: bool, progress: bool) -> IOResult<()> {
         let mut tfi = TermFreqIndex::new();
 
         if path.is_file() {
-            let content = Self::read_file(&path)?;
+            let content = Self::read_file(&path, progress)?;
             tfi.insert(path, content);
         } else if path.is_dir() {
-            Self::read_dir(&path, &mut tfi)?;
+            Self::read_dir(&path, &mut tfi, deep, progress)?;
         } else {
             return Err(Error::new(
                 ErrorKind::NotFound,
@@ -37,20 +36,25 @@ impl IOControl {
     //      path doesn't exist - NotFound
     //      lacks permission to view content - PermissionDenied
     //      points at a non-directory file - NotADirectory
-    fn read_dir(path: &PathBuf, tfi: &mut TermFreqIndex) -> IOResult<()> {
+    fn read_dir(
+        path: &PathBuf,
+        tfi: &mut TermFreqIndex,
+        deep: bool,
+        progress: bool,
+    ) -> IOResult<()> {
         let dir = fs::read_dir(&path)?;
 
         for dir_entry in dir {
             let dir_path = dir_entry?.path();
 
             let tf_option = if dir_path.is_file() {
-                Some(Self::read_file(&dir_path)?)
+                Some(Self::read_file(&dir_path, progress)?)
             } else {
                 None
             };
 
-            if dir_path.is_dir() {
-                Self::read_dir(&dir_path, tfi)?;
+            if dir_path.is_dir() && deep {
+                Self::read_dir(&dir_path, tfi, deep, progress)?;
             }
 
             if let Some(tf) = tf_option {
@@ -63,7 +67,7 @@ impl IOControl {
 
     //  Possible Errors:
     //      Not Found (Cannot Tokenize)
-    fn read_file(path: &PathBuf) -> std::io::Result<TermFreq> {
+    fn read_file(path: &PathBuf, progress: bool) -> std::io::Result<TermFreq> {
         // TODO: Handle Errors
         let path_extension = path.extension();
         let mut tf = TermFreq::new();
@@ -71,7 +75,12 @@ impl IOControl {
         if let Some(extension_osstr) = path_extension {
             if let Some(extension) = extension_osstr.to_str() {
                 let content_option = match extension {
-                    "xhtml" | "html" | "xml" => Some(read_xml_file(path)?),
+                    "xhtml" | "html" | "xml" => {
+                        if progress {
+                            println!("Indexing {:?}", path);
+                        }
+                        Some(read_xml_file(path)?)
+                    }
                     _ => {
                         LogLevel::WARN(format!("Cannot Tokenize {}", path.display())).show();
                         None
@@ -97,7 +106,6 @@ impl IOControl {
     }
 }
 
-#[allow(dead_code)]
 pub enum LogLevel {
     ERROR(String),
     WARN(String),

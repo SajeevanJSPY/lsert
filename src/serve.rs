@@ -9,7 +9,6 @@ pub struct Serve {
     req: Request,
 }
 
-#[allow(dead_code)]
 impl Serve {
     pub fn new(req: Request) -> Self {
         Self { req }
@@ -97,9 +96,7 @@ impl Serve {
 
         Ok(())
     }
-
 }
-
 
 fn tf(post_data: Vec<String>, json_path: impl AsRef<Path>) -> Vec<(PathBuf, usize)> {
     type TermFreq = HashMap<String, usize>;
