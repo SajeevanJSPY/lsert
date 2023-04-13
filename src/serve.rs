@@ -5,6 +5,9 @@ use std::io::{self, Error, ErrorKind};
 use std::path::{Path, PathBuf};
 use tiny_http::{Header, Method, Request, Response, StatusCode};
 
+const WEB_FILE_DIR: &'static str = "files/web_files";
+
+
 pub struct Serve {
     req: Request,
 }
@@ -49,17 +52,12 @@ impl Serve {
     //  Possible Errors ->
     //      File Open: NotFound, Permission Denied, AlreadyExists, InvalidInput
     //      Read: Interrupted(Non Utf8)
-    // TODO: Implement Respond Properly
     pub fn handle_connection(self, json_path: impl AsRef<Path>) -> io::Result<()> {
-        const WEB_FILE_DIR: &'static str = "files/web_files";
         println!("{} {:?}", self.req.method(), self.req.url());
 
-        // TODO: Handling Requests Properly
-
-        // Method Handling
+        // Handling Request Methods
         match self.req.method() {
             Method::Get => {
-                println!("Handling Get Method");
                 let (status_code, filename) = if self.req.url() == "/" {
                     (200, "index.html")
                 } else {
@@ -85,12 +83,10 @@ impl Serve {
                 self.req.respond(response).unwrap();
             }
             Method::Post => {
-                let post_data = self.handle_post_method(json_path);
-                println!("Handling Post Method {:?}", post_data);
+                self.handle_post_method(json_path).unwrap();
             }
             _ => {
-                // TODO: Handle this methods
-                println!("Not implemented for this method {:?}", self.req.method());
+                unimplemented!();
             }
         }
 
@@ -112,7 +108,6 @@ fn tf(post_data: Vec<String>, json_path: impl AsRef<Path>) -> Vec<(PathBuf, usiz
     let mut documents = TermFreqPath::new();
     for (path, termfreq) in vec_term {
         let iter = post_data.iter();
-        // Checking Paths to how many numbers
         let mut count = 0;
 
         for word in iter {

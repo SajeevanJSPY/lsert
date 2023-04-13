@@ -1,4 +1,7 @@
-use crate::file_types::xml::read_xml_file;
+use crate::file_types::{
+    read_xml_file,
+    read_plaintext_file
+};
 use crate::lexical_analysis::Lexer;
 use std::collections::HashMap;
 use std::fmt::{Display, Error as LogError, Formatter};
@@ -9,17 +12,32 @@ use std::path::PathBuf;
 type TermFreq = HashMap<String, usize>;
 type TermFreqIndex = HashMap<PathBuf, TermFreq>;
 
-pub struct IOControl;
+pub struct IOControl {
+    path: PathBuf,
+    json_path: String,
+    deep: bool,
+    progress: bool,
+}
 
 impl IOControl {
-    pub fn new(path: PathBuf, json_path: &str, deep: bool, progress: bool) -> IOResult<()> {
+    pub fn new(path: PathBuf, json_path: &str, deep: bool, progress: bool) -> Self {
+        Self {
+            path,
+            json_path: json_path.to_string(),
+            deep,
+            progress,
+        }
+    }
+
+    pub fn check_file_type(&self) -> IOResult<()> {
         let mut tfi = TermFreqIndex::new();
+        let path = &self.path;
 
         if path.is_file() {
-            let content = Self::read_file(&path, progress)?;
-            tfi.insert(path, content);
+            let content = self.read_file(path)?;
+            tfi.insert(path.clone(), content);
         } else if path.is_dir() {
-            Self::read_dir(&path, &mut tfi, deep, progress)?;
+            self.read_dir(path, &mut tfi)?;
         } else {
             return Err(Error::new(
                 ErrorKind::NotFound,
@@ -27,7 +45,7 @@ impl IOControl {
             ));
         }
 
-        let file = File::create(json_path)?;
+        let file = File::create(&self.json_path)?;
         serde_json::to_writer(file, &tfi)?;
         Ok(())
     }
@@ -36,25 +54,20 @@ impl IOControl {
     //      path doesn't exist - NotFound
     //      lacks permission to view content - PermissionDenied
     //      points at a non-directory file - NotADirectory
-    fn read_dir(
-        path: &PathBuf,
-        tfi: &mut TermFreqIndex,
-        deep: bool,
-        progress: bool,
-    ) -> IOResult<()> {
+    fn read_dir(&self, path: &PathBuf, tfi: &mut TermFreqIndex) -> IOResult<()> {
         let dir = fs::read_dir(&path)?;
 
         for dir_entry in dir {
             let dir_path = dir_entry?.path();
 
             let tf_option = if dir_path.is_file() {
-                Some(Self::read_file(&dir_path, progress)?)
+                Some(self.read_file(&dir_path)?)
             } else {
                 None
             };
 
-            if dir_path.is_dir() && deep {
-                Self::read_dir(&dir_path, tfi, deep, progress)?;
+            if dir_path.is_dir() && self.deep {
+                self.read_dir(&dir_path, tfi)?;
             }
 
             if let Some(tf) = tf_option {
@@ -67,7 +80,7 @@ impl IOControl {
 
     //  Possible Errors:
     //      Not Found (Cannot Tokenize)
-    fn read_file(path: &PathBuf, progress: bool) -> std::io::Result<TermFreq> {
+    fn read_file(&self, path: &PathBuf) -> std::io::Result<TermFreq> {
         // TODO: Handle Errors
         let path_extension = path.extension();
         let mut tf = TermFreq::new();
@@ -76,10 +89,13 @@ impl IOControl {
             if let Some(extension) = extension_osstr.to_str() {
                 let content_option = match extension {
                     "xhtml" | "html" | "xml" => {
-                        if progress {
+                        if self.progress {
                             println!("Indexing {:?}", path);
                         }
                         Some(read_xml_file(path)?)
+                    }
+                    "txt" => {
+                        Some(read_plaintext_file(path)?)
                     }
                     _ => {
                         LogLevel::WARN(format!("Cannot Tokenize {}", path.display())).show();

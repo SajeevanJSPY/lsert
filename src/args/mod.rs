@@ -169,9 +169,9 @@ impl Args {
                     LogLevel::SIGNAL(format!("Indexing...   {}", folder_path).to_string()).show();
                     let entry = PathBuf::from(folder_path);
 
-                    if let Err(err) =
-                        IOControl::new(entry, &json_path, self.options.deep, self.options.progress)
-                    {
+                    let io_control =
+                        IOControl::new(entry, &json_path, self.options.deep, self.options.progress);
+                    if let Err(err) = io_control.check_file_type() {
                         println!("{:?}", err);
                     }
                 } else {
