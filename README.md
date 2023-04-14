@@ -1,35 +1,32 @@
-[![Rust](https://github.com/SajeevanJSPY/lsert/actions/workflows/rust.yml/badge.svg)](https://github.com/SajeevanJSPY/lsert/actions/workflows/rust.yml)
+[![LSERT](https://github.com/SajeevanJSPY/lsert/actions/workflows/rust.yml/badge.svg)](https://github.com/SajeevanJSPY/lsert/actions/workflows/rust.yml)
 # LSERT (Local Search Engine RusT)
 
-** This is an experimental Technology **
-** This is an unfinished project, This Code could break easily, The result might be Unexpected **
-** File Ranking Algorithm also not finished yet, New File Ranking Algorithms Ideas are always welcome **
+**WARNING:
+This is an experimental technology 
+This code could break easily, The result might be Unexpected
+File ranking algorithm also not finished yet, new file ranking algorithms ideas are always welcome**
 
-This Repository about creating Local Search Engine Using Rust
 
 ## Quick Start
 ```console
 $ cargo run index ./folder -dp
 $ cargo run serve 
 ```
-## Supported Files for Analyze
-** xml, xhtml, html, txt **
+## Supported files for tokenize
+<pre>xml, xhtml, html, txt</pre>
 
-# New Ideas
+## Tasks
 ### Server Side
-    Share the files Locally (PC-Mobile), Share the files that connected to the same network using FTP
-    Trying new Various Page Ranking Algorithms
-    Colored Terminal View
-    can get multiple folder paths
-    Manually Unselect the file, you do not want to search
-    Wrongly typed words must be noted and giving warnings
-    Auto Completion Engine (Trie Algorithm)
+- [ ] Share the files locally (PC-Mobile), share the files that connected to the same network using FTP
+- [ ] Trying new various page ranking algorithms
+- [x] Colored terminal view
+- [ ] can get multiple folder paths
+- [ ] Manually unselect the file, you do not want to search
+- [ ] Wrongly typed words must be noted and giving warnings
+- [ ] Auto completion engine (Trie algorithm)
     
 ### Client Side
-    Provide file paths as a link (So Can Easily Go to the file)
-    File Routing in Browser With Good UI (Easily can navigate inside the browser)
-    Caching the Pages for Better Performance
-
-Lexical Analysis: https://en.wikipedia.org/wiki/Lexical_analysis
-Ranking Documents (tf-idf): https://en.wikipedia.org/wiki/Tf%E2%80%93idf
+- [ ] Provide file paths as a link (so can easily go to the file)
+- [ ] File Routing in browser with good UI (easily can navigate inside the browser)
+- [ ] Caching the pages for better performance
 

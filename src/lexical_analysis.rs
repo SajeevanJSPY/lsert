@@ -60,7 +60,7 @@ impl<'s> Iterator for Lexer<'s> {
 #[cfg(test)]
 mod tests {
     use super::Lexer;
-    use crate::file_types::xml::read_xml_file;
+    use crate::file_types::read_xml_file;
     const FILE_PATH: &'static str = "files/tokenize.html";
 
     #[test]
