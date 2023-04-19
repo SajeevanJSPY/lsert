@@ -1,6 +1,6 @@
 use crate::file_types::{
     read_xml_file,
-    read_plaintext_file
+    read_plain_file
 };
 use crate::lexical_analysis::Lexer;
 use std::collections::HashMap;
@@ -95,7 +95,10 @@ impl IOControl {
                         Some(read_xml_file(path)?)
                     }
                     "txt" => {
-                        Some(read_plaintext_file(path)?)
+                        if self.progress {
+                            println!("Indexing {:?}", path);
+                        }
+                        Some(read_plain_file(path)?)
                     }
                     _ => {
                         LogLevel::WARN(format!("Cannot Tokenize {}", path.display())).show();

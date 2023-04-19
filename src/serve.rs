@@ -53,9 +53,6 @@ impl Serve {
     //      File Open: NotFound, Permission Denied, AlreadyExists, InvalidInput
     //      Read: Interrupted(Non Utf8)
     pub fn handle_connection(self, json_path: impl AsRef<Path>) -> io::Result<()> {
-        println!("{} {:?}", self.req.method(), self.req.url());
-
-        // Handling Request Methods
         match self.req.method() {
             Method::Get => {
                 let (status_code, filename) = if self.req.url() == "/" {
