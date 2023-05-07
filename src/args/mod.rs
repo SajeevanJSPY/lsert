@@ -1,5 +1,6 @@
 mod args;
 mod osstr_ext;
+mod redis_client;
 
 use crate::io_control::{IOControl, LogLevel};
 use crate::serve::Serve;
@@ -161,6 +162,8 @@ impl Args {
 
     pub fn implication(self) {
         let json_path = self.options.json_path();
+        let client = redis::Client::open(redis_client::CLIENT_INFO).unwrap();
+        let con = client.get_connection().unwrap();
 
         match self.command.unwrap() {
             /* Indexing */
@@ -169,8 +172,8 @@ impl Args {
                     LogLevel::SIGNAL(format!("Indexing...   {}", folder_path).to_string()).show();
                     let entry = PathBuf::from(folder_path);
 
-                    let io_control =
-                        IOControl::new(entry, &json_path, self.options.deep, self.options.progress);
+                    let mut io_control =
+                        IOControl::new(entry, &json_path, self.options.deep, self.options.progress, con);
                     if let Err(err) = io_control.check_file_type() {
                         println!("{:?}", err);
                     }

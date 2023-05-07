@@ -6,7 +6,9 @@ mod serve;
 
 use args::Args;
 
-fn main() {
+fn main() -> redis::RedisResult<()> {
     let args = Args::new();
     args.implication();
+
+    Ok(())
 }

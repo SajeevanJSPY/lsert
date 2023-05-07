@@ -13,7 +13,12 @@ $ cargo run index ./folder -dp
 $ cargo run serve 
 ```
 ## Supported files for tokenize
-<pre>xml, xhtml, html, txt</pre>
+<pre>
+- xml
+- xhtml
+- html
+- txt
+</pre>
 
 ## Tasks
 ### Server Side
@@ -30,3 +35,14 @@ $ cargo run serve
 - [ ] File Routing in browser with good UI (easily can navigate inside the browser)
 - [ ] Caching the pages for better performance
 
+============================================================
+Branch _**db_collab**_
+Added a new branch for testing full text search databases
+Try to find which database is good for our project
+
+**WARNING:
+this branch is only for testing purposes, if you run _db_collab_ branch code on your machine, It is definitely going to fail, unless you fix it on your own**
+
+```
+    - redis full text
+```

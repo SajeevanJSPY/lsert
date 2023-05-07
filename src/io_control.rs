@@ -5,9 +5,9 @@ use crate::file_types::{
 use crate::lexical_analysis::Lexer;
 use std::collections::HashMap;
 use std::fmt::{Display, Error as LogError, Formatter};
-use std::fs::{self, File};
-use std::io::{Error, ErrorKind, Result as IOResult};
 use std::path::PathBuf;
+use std::fs;
+use redis::{Commands, Connection};
 
 type TermFreq = HashMap<String, usize>;
 type TermFreqIndex = HashMap<PathBuf, TermFreq>;
@@ -17,36 +17,29 @@ pub struct IOControl {
     json_path: String,
     deep: bool,
     progress: bool,
+    con: Connection
 }
 
 impl IOControl {
-    pub fn new(path: PathBuf, json_path: &str, deep: bool, progress: bool) -> Self {
+    pub fn new(path: PathBuf, json_path: &str, deep: bool, progress: bool, con: Connection) -> Self {
         Self {
             path,
             json_path: json_path.to_string(),
             deep,
             progress,
+            con
         }
     }
 
-    pub fn check_file_type(&self) -> IOResult<()> {
-        let mut tfi = TermFreqIndex::new();
-        let path = &self.path;
+    pub fn check_file_type(&mut self) -> redis::RedisResult<()> {
+        let path = &self.path.clone();
 
         if path.is_file() {
-            let content = self.read_file(path)?;
-            tfi.insert(path.clone(), content);
+            self.read_file(path)?;
         } else if path.is_dir() {
-            self.read_dir(path, &mut tfi)?;
-        } else {
-            return Err(Error::new(
-                ErrorKind::NotFound,
-                "Cannot handle the path type",
-            ));
+            self.read_dir(path)?;
         }
 
-        let file = File::create(&self.json_path)?;
-        serde_json::to_writer(file, &tfi)?;
         Ok(())
     }
 
@@ -54,24 +47,18 @@ impl IOControl {
     //      path doesn't exist - NotFound
     //      lacks permission to view content - PermissionDenied
     //      points at a non-directory file - NotADirectory
-    fn read_dir(&self, path: &PathBuf, tfi: &mut TermFreqIndex) -> IOResult<()> {
+    fn read_dir(&mut self, path: &PathBuf) -> redis::RedisResult<()> {
         let dir = fs::read_dir(&path)?;
 
         for dir_entry in dir {
             let dir_path = dir_entry?.path();
 
-            let tf_option = if dir_path.is_file() {
-                Some(self.read_file(&dir_path)?)
-            } else {
-                None
-            };
-
-            if dir_path.is_dir() && self.deep {
-                self.read_dir(&dir_path, tfi)?;
+            if dir_path.is_file() {
+                self.read_file(&dir_path)?;
             }
 
-            if let Some(tf) = tf_option {
-                tfi.insert(dir_path, tf);
+            if dir_path.is_dir() && self.deep {
+                self.read_dir(&dir_path)?;
             }
         }
 
@@ -80,10 +67,8 @@ impl IOControl {
 
     //  Possible Errors:
     //      Not Found (Cannot Tokenize)
-    fn read_file(&self, path: &PathBuf) -> std::io::Result<TermFreq> {
-        // TODO: Handle Errors
+    fn read_file(&mut self, path: &PathBuf) -> redis::RedisResult<()> {
         let path_extension = path.extension();
-        let mut tf = TermFreq::new();
 
         if let Some(extension_osstr) = path_extension {
             if let Some(extension) = extension_osstr.to_str() {
@@ -107,21 +92,25 @@ impl IOControl {
                 };
 
                 if let Some(content) = content_option {
+                    let path = path.to_str().unwrap();
+                    // Add a caching folder
+                    self.con.hset(path, ".", 0)?;
                     let char_slice = content.chars().collect::<Vec<_>>();
                     let lexer = Lexer::new(&char_slice);
 
                     for token in lexer {
-                        if let Some(tok) = tf.get_mut(&token) {
-                            *tok += 1;
+                        let token_exists = self.con.hexists::<&str, String, u8>(path, token.clone())?;
+                        if token_exists == 1 {
+                            self.con.hincr(path, token, 1)?;
                         } else {
-                            tf.insert(token, 1);
+                            self.con.hset(path, token, 1)?;
                         }
                     }
                 }
             }
         }
 
-        Ok(tf)
+        Ok(())
     }
 }
 
